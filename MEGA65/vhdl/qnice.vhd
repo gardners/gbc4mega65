@@ -30,10 +30,19 @@ port (
    UART_RXD          : in std_logic;                  -- receive data, 115.200 baud, 8-N-1, rxd, txd only; rts/cts are not available
    UART_TXD          : out std_logic;                 -- send data, ditto
    
+   -- SD Card (intenal on bottom)
    SD_RESET          : out std_logic;
    SD_CLK            : out std_logic;
    SD_MOSI           : out std_logic;
    SD_MISO           : in std_logic;
+   SD_CD             : in std_logic;
+
+   -- SD Card (external on back)
+   SD2_RESET         : out std_logic;
+   SD2_CLK           : out std_logic;
+   SD2_MOSI          : out std_logic;
+   SD2_MISO          : in std_logic;
+   SD2_CD            : in std_logic;
 
    osm_xy               : out std_logic_vector(15 downto 0);
    osm_dxdy             : out std_logic_vector(15 downto 0);
@@ -162,7 +171,22 @@ signal reg_maxramrom_data_out     : std_logic_vector(15 downto 0);
 -- The cartridge address is up to 8 MB large and is calculated like this: (gbc_cart_sel x 4096) + gbc_cart_win
 signal gbc_cart_sel               : integer range 0 to 2047;
 
+-- SD Card
+signal sd_mux_reset               : std_logic;
+signal sd_mux_clk                 : std_logic;
+signal sd_mux_mosi                : std_logic;
+signal sd_mux_miso                : std_logic;
+
 begin
+
+   -- Multiplex the two SD cards into one interface
+   sd_mux_miso <= SD2_MISO     when SD2_CD = '0' else SD_MISO;  -- External present
+   SD2_RESET   <= sd_mux_reset when SD2_CD = '0' else '1';      -- External present
+   SD2_CLK     <= sd_mux_clk   when SD2_CD = '0' else '0';      -- External present
+   SD2_MOSI    <= sd_mux_mosi  when SD2_CD = '0' else '1';      -- External present
+   SD_RESET    <= sd_mux_reset when SD2_CD = '1' else '1';      -- External not present, use internal
+   SD_CLK      <= sd_mux_clk   when SD2_CD = '1' else '0';      -- External not present, use internal
+   SD_MOSI     <= sd_mux_mosi  when SD2_CD = '1' else '1';      -- External not present, use internal
 
    vram_addr     <= cpu_addr;
    vram_data_out <= cpu_data_out;
@@ -289,10 +313,14 @@ begin
          reg                  => sd_reg,
          data_in              => cpu_data_out,
          data_out             => sd_data_out,
-         sd_reset             => SD_RESET,
-         sd_clk               => SD_CLK,
-         sd_mosi              => SD_MOSI,
-         sd_miso              => SD_MISO
+--         sd_reset             => SD2_RESET,
+--         sd_clk               => SD2_CLK,
+--         sd_mosi              => SD2_MOSI,
+--         sd_miso              => SD2_MISO
+         sd_reset             => sd_mux_reset,
+         sd_clk               => sd_mux_clk,
+         sd_mosi              => sd_mux_mosi,
+         sd_miso              => sd_mux_miso
       );
     
     -- Standard QNICE-FPGA MMIO controller  
