@@ -20,6 +20,7 @@ TOP=top_test_hdmi
 PPRDIR=.
 VHDL2008=\
 	$(PPRDIR)/vhdl/clk.vhd \
+	$(PPRDIR)/vhdl/video/video_modes_pkg.vhd \
 	$(PPRDIR)/vhdl/drivers/vga_to_hdmi.vhd \
 	$(PPRDIR)/vhdl/drivers/types_pkg.vhd \
 	$(PPRDIR)/vhdl/drivers/serialiser_10to1_selectio.vhd \
@@ -67,8 +68,6 @@ $(TCL): Makefile.test_hmdi
 	echo "route_design" >> $@
 	echo "write_checkpoint -force $(DCP)" >> $@
 	echo "write_bitstream -force $(BIT)" >> $@
-	echo "set mmi_file $(MMI)" >> $@
-	echo "source gen-mmi.tcl" >> $@
 	echo "exit" >> $@
 
 # Generate the bit-file used to configure the FPGA

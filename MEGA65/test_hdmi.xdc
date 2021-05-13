@@ -9,11 +9,6 @@
 set_property -dict {PACKAGE_PIN V13 IOSTANDARD LVCMOS33} [get_ports CLK]
 create_clock -period 10.000 -name CLK [get_ports CLK]
 
-create_generated_clock -name gbmainclk [get_pins */i_mmcme2_adv/CLKOUT0]
-create_generated_clock -name qniceclk  [get_pins */i_mmcme2_adv/CLKOUT1]
-create_generated_clock -name pixelclk  [get_pins */i_mmcme2_adv/CLKOUT2]
-create_generated_clock -name pixelclk5 [get_pins */i_mmcme2_adv/CLKOUT3]
-
 ## Reset button
 set_property -dict {PACKAGE_PIN M13 IOSTANDARD LVCMOS33} [get_ports RESET_N]
 
@@ -26,11 +21,11 @@ set_property -dict {PACKAGE_PIN A14 IOSTANDARD LVCMOS33} [get_ports kb_io0]
 set_property -dict {PACKAGE_PIN A13 IOSTANDARD LVCMOS33} [get_ports kb_io1]
 set_property -dict {PACKAGE_PIN C13 IOSTANDARD LVCMOS33} [get_ports kb_io2]
 
-## Micro SD Connector (this is the slot at the bottom side of the case under the cover)
-set_property -dict {PACKAGE_PIN B15  IOSTANDARD LVCMOS33} [get_ports SD_RESET]
-set_property -dict {PACKAGE_PIN B17  IOSTANDARD LVCMOS33} [get_ports SD_CLK]
-set_property -dict {PACKAGE_PIN B16  IOSTANDARD LVCMOS33} [get_ports SD_MOSI]
-set_property -dict {PACKAGE_PIN B18  IOSTANDARD LVCMOS33} [get_ports SD_MISO]
+### Micro SD Connector (this is the slot at the bottom side of the case under the cover)
+#set_property -dict {PACKAGE_PIN B15  IOSTANDARD LVCMOS33} [get_ports SD_RESET]
+#set_property -dict {PACKAGE_PIN B17  IOSTANDARD LVCMOS33} [get_ports SD_CLK]
+#set_property -dict {PACKAGE_PIN B16  IOSTANDARD LVCMOS33} [get_ports SD_MOSI]
+#set_property -dict {PACKAGE_PIN B18  IOSTANDARD LVCMOS33} [get_ports SD_MISO]
 
 ## Joystick port A
 #set_property -dict {PACKAGE_PIN C14 IOSTANDARD LVCMOS33} [get_ports joy_1_up_n]

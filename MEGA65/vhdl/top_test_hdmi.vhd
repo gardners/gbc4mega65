@@ -8,8 +8,14 @@ use ieee.numeric_std.all;
 library work;
 use work.types_pkg.all;
 
+library work;
+use work.video_modes_pkg.all;
+
 library xpm;
 use xpm.vcomponents.all;
+
+library unisim;
+use unisim.vcomponents.all;
 
 entity top_test_hdmi is
 port (
@@ -47,74 +53,62 @@ end top_test_hdmi;
 
 architecture synthesis of top_test_hdmi is
 
--- rendering constants
-constant GB_DX              : integer := 160;          -- Game Boy's X pixel resolution
-constant GB_DY              : integer := 144;          -- ditto Y
-constant VGA_DX             : integer := 800;          -- SVGA mode 800 x 600 @ 60 Hz
-constant VGA_DY             : integer := 600;          -- ditto
-constant GB_TO_VGA_SCALE    : integer := 4;            -- 160 x 144 => 4x => 640 x 576
+--   constant C_VIDEO_MODE : video_modes_t := C_VGA_720_576_50;
+   constant C_VIDEO_MODE : video_modes_t := C_VGA_800_600_60;
 
--- Constants for VGA output
-constant FONT_DX            : integer := 16;
-constant FONT_DY            : integer := 16;
-constant CHARS_DX           : integer := VGA_DX / FONT_DX;
-constant CHARS_DY           : integer := VGA_DY / FONT_DY;
-constant CHAR_MEM_SIZE      : integer := CHARS_DX * CHARS_DY;
+   -- rendering constants
+   constant VGA_DX       : integer := C_VIDEO_MODE.H_PIXELS;
+   constant VGA_DY       : integer := C_VIDEO_MODE.V_PIXELS;
 
--- clocks
-signal main_clk             : std_logic;               -- Game Boy core main clock @ 33.554432 MHz
-signal vga_clk              : std_logic;               -- SVGA mode 800 x 600 @ 60 Hz: 40.00 MHz
-signal vga_clk5             : std_logic;               -- Digital Video output: 200.00 MHz
-signal qnice_clk            : std_logic;               -- QNICE main clock @ 50 MHz
-
--- resets
-signal main_rst             : std_logic;               -- Game Boy core main clock @ 33.554432 MHz
-signal vga_rst              : std_logic;               -- SVGA mode 800 x 600 @ 60 Hz: 40.00 MHz
-signal qnice_rst            : std_logic;               -- QNICE main clock @ 50 MHz
+   -- clocks and reset
+   signal vga_clk   : std_logic;
+   signal vga_clkx5 : std_logic;
+   signal vga_rst   : std_logic;
+   signal main_clk  : std_logic;
+   signal main_rst  : std_logic;
 
 
----------------------------------------------------------------------------------------------
--- main_clk
----------------------------------------------------------------------------------------------
+   ---------------------------------------------------------------------------------------------
+   -- main_clk
+   ---------------------------------------------------------------------------------------------
 
--- Audio
-signal main_pcm_audio_left  : std_logic_vector(15 downto 0);
-signal main_pcm_audio_right : std_logic_vector(15 downto 0);
-signal main_pcm_clken       : std_logic;
-signal main_pcm_acr         : std_logic;                     -- HDMI ACR packet strobe (frequency = 128fs/N e.g. 1kHz)
-signal main_pcm_n           : std_logic_vector(19 downto 0); -- HDMI ACR N value
-signal main_pcm_cts         : std_logic_vector(19 downto 0); -- HDMI ACR CTS value
+   -- Audio
+   signal main_pcm_audio_left  : std_logic_vector(15 downto 0);
+   signal main_pcm_audio_right : std_logic_vector(15 downto 0);
+   signal main_pcm_clken       : std_logic;
+   signal main_pcm_acr         : std_logic;                     -- HDMI ACR packet strobe (frequency = 128fs/N e.g. 1kHz)
+   signal main_pcm_n           : std_logic_vector(19 downto 0); -- HDMI ACR N value
+   signal main_pcm_cts         : std_logic_vector(19 downto 0); -- HDMI ACR CTS value
 
 
----------------------------------------------------------------------------------------------
--- vga_clk
----------------------------------------------------------------------------------------------
+   ---------------------------------------------------------------------------------------------
+   -- vga_clk
+   ---------------------------------------------------------------------------------------------
 
-signal vga_disp_en          : std_logic;
-signal vga_col              : integer range 0 to VGA_DX - 1;
-signal vga_row              : integer range 0 to VGA_DY - 1;
-signal vga_tmds             : slv_9_0_t(0 to 2);              -- parallel TMDS symbol stream x 3 channels
-
+   signal vga_disp_en          : std_logic;
+   signal vga_col              : integer range 0 to VGA_DX - 1;
+   signal vga_row              : integer range 0 to VGA_DY - 1;
+   signal vga_tmds             : slv_9_0_t(0 to 2);              -- parallel TMDS symbol stream x 3 channels
 
 begin
 
-   -- MMCME2_ADV clock generators:
-   --    Main clock:          33.554432 MHz
-   --    QNICE co-processor:  50 MHz
-   --    Pixelclock:          40 MHz
+   ---------------------------------------------------------------------------------------------
+   -- Clock and Reset generator
+   ---------------------------------------------------------------------------------------------
+
    i_clk : entity work.clk
       port map
       (
-         sys_clk_i    => CLK,
-         sys_rstn_i   => RESET_N,
-         main_clk_o   => main_clk,         -- Core's 33.554432 MHz main clock
-         main_rst_o   => main_rst,         -- Core's reset, synchronized
-         qnice_clk_o  => qnice_clk,        -- QNICE's 50 MHz main clock
-         qnice_rst_o  => qnice_rst,        -- QNICE's reset, synchronized
-         pixel_clk_o  => vga_clk,          -- VGA's 40.00 MHz pixelclock for SVGA mode 800 x 600 @ 60 Hz
-         pixel_rst_o  => vga_rst,          -- VGA's reset, synchronized
-         pixel_clk5_o => vga_clk5          -- VGA's 200.00 MHz pixelclock for Digital Video
+         sys_clk_i     => CLK,
+         sys_rstn_i    => RESET_N,
+         vga_clk_sel_i => C_VIDEO_MODE.CLK_SEL, -- 0: 27 MHz, 1 : 40 MHz
+         vga_clkx5_o   => vga_clkx5,
+         vga_clk_o     => vga_clk,
+         vga_rst_o     => vga_rst
       ); -- i_clk : entity work.clk
+
+   main_clk <= vga_clk;
+   main_rst <= vga_rst;
 
 
    ---------------------------------------------------------------------------------------------
@@ -173,17 +167,15 @@ begin
    vga_pixels_and_timing : entity work.vga_controller
       generic map
       (
-         H_PIXELS  => VGA_DX,      -- horizontal display width in pixels
-         V_PIXELS  => VGA_DY,      -- vertical display width in rows
-
-         H_PULSE   => 128,         -- horizontal sync pulse width in pixels
-         H_BP      => 88,          -- horizontal back porch width in pixels
-         H_FP      => 40,          -- horizontal front porch width in pixels
+         H_PIXELS  => C_VIDEO_MODE.H_PIXELS,
+         V_PIXELS  => C_VIDEO_MODE.V_PIXELS,
+         H_PULSE   => C_VIDEO_MODE.H_PULSE,
+         H_BP      => C_VIDEO_MODE.H_BP,
+         H_FP      => C_VIDEO_MODE.H_FP,
+         V_PULSE   => C_VIDEO_MODE.V_PULSE,
+         V_BP      => C_VIDEO_MODE.V_BP,
+         V_FP      => C_VIDEO_MODE.V_FP,
          H_POL     => '1',         -- horizontal sync pulse polarity (1 = positive, 0 = negative)
-
-         V_PULSE   => 4,           -- vertical sync pulse width in rows
-         V_BP      => 23,          -- vertical back porch width in rows
-         V_FP      => 1,           -- vertical front porch width in rows
          V_POL     => '1'          -- vertical sync pulse polarity (1 = positive, 0 = negative)
       )
       port map
@@ -201,13 +193,13 @@ begin
 
    -- Generate Video
    vga_red   <= X"00" when vga_disp_en = '0' else
-                X"FF" when vga_col = 0 or vga_col = 799 or vga_row = 0 or vga_row = 599 else
+                X"FF" when vga_col = 0 or vga_col = VGA_DX-1 or vga_row = 0 or vga_row = VGA_DY-1 else
                 X"77";
    vga_green <= X"00" when vga_disp_en = '0' else
-                X"FF" when vga_col = 0 or vga_col = 799 or vga_row = 0 or vga_row = 599 else
+                X"FF" when vga_col = 0 or vga_col = VGA_DX-1 or vga_row = 0 or vga_row = VGA_DY-1 else
                 X"55";
    vga_blue  <= X"00" when vga_disp_en = '0' else
-                X"FF" when vga_col = 0 or vga_col = 799 or vga_row = 0 or vga_row = 599 else
+                X"FF" when vga_col = 0 or vga_col = VGA_DX-1 or vga_row = 0 or vga_row = VGA_DY-1 else
                 X"33";
 
    -- make the VDAC output the image
@@ -264,7 +256,7 @@ begin
       port map (
          rst     => vga_rst,
          clk     => vga_clk,
-         clk_x5  => vga_clk5,
+         clk_x5  => vga_clkx5,
          d       => vga_tmds(i),
          out_p   => TMDS_data_p(i),
          out_n   => TMDS_data_n(i)
@@ -275,7 +267,7 @@ begin
    port map (
          rst     => vga_rst,
          clk     => vga_clk,
-         clk_x5  => vga_clk5,
+         clk_x5  => vga_clkx5,
          d       => "0000011111",
          out_p   => TMDS_clk_p,
          out_n   => TMDS_clk_n
