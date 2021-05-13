@@ -52,8 +52,8 @@ begin
 
    -- N and CTS values for HDMI Audio Clock Regeneration.
    -- depends on pixel clock and audio sample rate
-   pcm_n_o   <= std_logic_vector(to_unsigned(6144,  pcm_n_o'length));    -- 48000*128/1000
-   pcm_cts_o <= std_logic_vector(to_unsigned(40000, pcm_cts_o'length));  -- vga_clk/1000
+   pcm_n_o   <= std_logic_vector(to_unsigned(6144,  pcm_n_o'length));        -- 48000*128/1000
+   pcm_cts_o <= std_logic_vector(to_unsigned(clk_khz_i, pcm_cts_o'length));  -- vga_clk/1000
 
    -- ACR packet rate should be 128fs/N = 1kHz
    p_pcm_acr : process (clk_i)
