@@ -26,18 +26,17 @@ LIBRARY ieee;
 USE ieee.std_logic_1164.all;
 
 ENTITY vga_controller IS
-	GENERIC(
-		h_pulse 	:	INTEGER := 208;    	--horiztonal sync pulse width in pixels
-		h_bp	 	:	INTEGER := 336;		--horiztonal back porch width in pixels
-		h_pixels	:	INTEGER := 1920;		--horiztonal display width in pixels
-		h_fp	 	:	INTEGER := 128;		--horiztonal front porch width in pixels
-		h_pol		:	STD_LOGIC := '0';		--horizontal sync pulse polarity (1 = positive, 0 = negative)
-		v_pulse 	:	INTEGER := 3;			--vertical sync pulse width in rows
-		v_bp	 	:	INTEGER := 38;			--vertical back porch width in rows
-		v_pixels	:	INTEGER := 1200;		--vertical display width in rows
-		v_fp	 	:	INTEGER := 1;			--vertical front porch width in rows
-		v_pol		:	STD_LOGIC := '1');	--vertical sync pulse polarity (1 = positive, 0 = negative)
 	PORT(
+		h_pulse 	:	IN INTEGER;      	--horiztonal sync pulse width in pixels
+		h_bp	 	:	IN INTEGER;     	--horiztonal back porch width in pixels
+		h_pixels	:	IN INTEGER;   		--horiztonal display width in pixels
+		h_fp	 	:	IN INTEGER;     	--horiztonal front porch width in pixels
+		h_pol		:	IN STD_LOGIC;   	--horizontal sync pulse polarity (1 = positive, 0 = negative)
+		v_pulse 	:	IN INTEGER;     	--vertical sync pulse width in rows
+		v_bp	 	:	IN INTEGER;     	--vertical back porch width in rows
+		v_pixels	:	IN INTEGER;   		--vertical display width in rows
+		v_fp	 	:	IN INTEGER;     	--vertical front porch width in rows
+		v_pol		:	IN STD_LOGIC;    	--vertical sync pulse polarity (1 = positive, 0 = negative)
 		pixel_clk	:	IN		STD_LOGIC;	--pixel clock at frequency of VGA mode being used
 		reset_n		:	IN		STD_LOGIC;	--active low sycnchronous reset
 		h_sync		:	OUT	STD_LOGIC;	--horiztonal sync pulse
@@ -50,16 +49,18 @@ ENTITY vga_controller IS
 END vga_controller;
 
 ARCHITECTURE behavior OF vga_controller IS
-	CONSTANT	h_period	:	INTEGER := h_pulse + h_bp + h_pixels + h_fp;  --total number of pixel clocks in a row
-	CONSTANT	v_period	:	INTEGER := v_pulse + v_bp + v_pixels + v_fp;  --total number of rows in column
+	SIGNAL	h_period	:	INTEGER;  --total number of pixel clocks in a row
+	SIGNAL	v_period	:	INTEGER;  --total number of rows in column
 BEGIN
+	h_period	<= h_pulse + h_bp + h_pixels + h_fp;  --total number of pixel clocks in a row
+	v_period	<= v_pulse + v_bp + v_pixels + v_fp;  --total number of rows in column
 
 	n_blank <= '1';  --no direct blanking
 	n_sync <= '0';   --no sync on green
 	
 	PROCESS(pixel_clk, reset_n)
-		VARIABLE h_count	:	INTEGER RANGE 0 TO h_period - 1 := 0;  --horizontal counter (counts the columns)
-		VARIABLE v_count	:	INTEGER RANGE 0 TO v_period - 1 := 0;  --vertical counter (counts the rows)
+		VARIABLE h_count	:	INTEGER RANGE 0 TO 2047 := 0;  --horizontal counter (counts the columns)
+		VARIABLE v_count	:	INTEGER RANGE 0 TO 2047 := 0;  --vertical counter (counts the rows)
 	BEGIN
 	
 		IF(pixel_clk'EVENT AND pixel_clk = '1') THEN

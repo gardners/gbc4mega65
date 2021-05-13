@@ -5,6 +5,7 @@ package video_modes_pkg is
 
    type video_modes_t is record
       CLK_SEL   : std_logic;  -- 0 : 0: 27 MHz, 1 : 40 MHz
+      CLK_KHZ   : integer;    -- Pixel clock frequency in kHz
       H_PIXELS  : integer;    -- horizontal display width in pixels
       V_PIXELS  : integer;    -- vertical display width in rows
       H_PULSE   : integer;    -- horizontal sync pulse width in pixels
@@ -16,7 +17,8 @@ package video_modes_pkg is
    end record video_modes_t;
 
    constant C_VGA_800_600_60 : video_modes_t := (
-      CLK_SEL   => '1',       -- 39.79 MHz
+      CLK_SEL   => '1',       -- 40 MHz
+      CLK_KHZ   => 40000,     -- 40 MHz
       H_PIXELS  => 800,       -- horizontal display width in pixels
       V_PIXELS  => 600,       -- vertical display width in rows
       H_PULSE   => 128,       -- horizontal sync pulse width in pixels
@@ -29,7 +31,8 @@ package video_modes_pkg is
 
    -- Taken from section 4.9 in the document CEA-861-D
    constant C_VGA_720_576_50 : video_modes_t := (
-      CLK_SEL   => '0',       -- 27.00 MHz
+      CLK_SEL   => '0',       -- 27 MHz
+      CLK_KHZ   => 27000,     -- 27 MHz
       H_PIXELS  => 720,       -- horizontal display width in pixels
       V_PIXELS  => 576,       -- vertical display width in rows
       H_PULSE   => 64,        -- horizontal sync pulse width in pixels

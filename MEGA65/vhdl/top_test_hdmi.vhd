@@ -53,12 +53,11 @@ end top_test_hdmi;
 
 architecture synthesis of top_test_hdmi is
 
---   constant C_VIDEO_MODE : video_modes_t := C_VGA_720_576_50;
-   constant C_VIDEO_MODE : video_modes_t := C_VGA_800_600_60;
+   signal video_mode : video_modes_t;
 
    -- rendering constants
-   constant VGA_DX       : integer := C_VIDEO_MODE.H_PIXELS;
-   constant VGA_DY       : integer := C_VIDEO_MODE.V_PIXELS;
+   signal VGA_DX     : integer;
+   signal VGA_DY     : integer;
 
    -- clocks and reset
    signal vga_clk   : std_logic;
@@ -86,11 +85,38 @@ architecture synthesis of top_test_hdmi is
    ---------------------------------------------------------------------------------------------
 
    signal vga_disp_en          : std_logic;
-   signal vga_col              : integer range 0 to VGA_DX - 1;
-   signal vga_row              : integer range 0 to VGA_DY - 1;
+   signal vga_col              : integer range 0 to 2047;
+   signal vga_row              : integer range 0 to 2047;
    signal vga_tmds             : slv_9_0_t(0 to 2);              -- parallel TMDS symbol stream x 3 channels
 
+   signal sys_rstn_cnt         : std_logic_vector(15 downto 0) := (others => '1');
+   signal sys_rstn             : std_logic;
+   signal RESET_N_d            : std_logic;
+
 begin
+
+   -- Generate long reset whenever RESET_N changes and after power up.
+   p_sys_rstn : process (CLK)
+   begin
+      if rising_edge(CLK) then
+         if or(sys_rstn_cnt) = '1' then
+            sys_rstn_cnt <= std_logic_vector(unsigned(sys_rstn_cnt) - 1);
+            sys_rstn <= '0';
+         else
+            sys_rstn <= '1';
+         end if;
+
+         RESET_N_d <= RESET_N;
+
+         if RESET_N_d /= RESET_N then
+            sys_rstn_cnt <= (others => '1');
+         end if;
+      end if;
+   end process p_sys_rstn;
+
+   video_mode <= C_VGA_720_576_50 when RESET_N = '1' else C_VGA_800_600_60;
+   VGA_DX <= video_mode.H_PIXELS;
+   VGA_DY <= video_mode.V_PIXELS;
 
    ---------------------------------------------------------------------------------------------
    -- Clock and Reset generator
@@ -100,8 +126,8 @@ begin
       port map
       (
          sys_clk_i     => CLK,
-         sys_rstn_i    => RESET_N,
-         vga_clk_sel_i => C_VIDEO_MODE.CLK_SEL, -- 0: 27 MHz, 1 : 40 MHz
+         sys_rstn_i    => sys_rstn,
+         vga_clk_sel_i => video_mode.CLK_SEL, -- 0: 27 MHz, 1 : 40 MHz
          vga_clkx5_o   => vga_clkx5,
          vga_clk_o     => vga_clk,
          vga_rst_o     => vga_rst
@@ -134,6 +160,7 @@ begin
       port map (
          clk_i       => main_clk,
          rst_i       => main_rst,
+         clk_khz_i   => video_mode.CLK_KHZ,
          pcm_left_o  => main_pcm_audio_left,
          pcm_right_o => main_pcm_audio_right,
          pcm_clken_o => main_pcm_clken,
@@ -165,21 +192,18 @@ begin
    -- Component that produces VGA timings and outputs the currently active pixel coordinate (row, column)
    -- Timings taken from http://tinyvga.com/vga-timing/800x600@60Hz
    vga_pixels_and_timing : entity work.vga_controller
-      generic map
-      (
-         H_PIXELS  => C_VIDEO_MODE.H_PIXELS,
-         V_PIXELS  => C_VIDEO_MODE.V_PIXELS,
-         H_PULSE   => C_VIDEO_MODE.H_PULSE,
-         H_BP      => C_VIDEO_MODE.H_BP,
-         H_FP      => C_VIDEO_MODE.H_FP,
-         V_PULSE   => C_VIDEO_MODE.V_PULSE,
-         V_BP      => C_VIDEO_MODE.V_BP,
-         V_FP      => C_VIDEO_MODE.V_FP,
-         H_POL     => '1',         -- horizontal sync pulse polarity (1 = positive, 0 = negative)
-         V_POL     => '1'          -- vertical sync pulse polarity (1 = positive, 0 = negative)
-      )
       port map
       (
+         H_PIXELS  => video_mode.H_PIXELS,
+         V_PIXELS  => video_mode.V_PIXELS,
+         H_PULSE   => video_mode.H_PULSE,
+         H_BP      => video_mode.H_BP,
+         H_FP      => video_mode.H_FP,
+         V_PULSE   => video_mode.V_PULSE,
+         V_BP      => video_mode.V_BP,
+         V_FP      => video_mode.V_FP,
+         H_POL     => '1',         -- horizontal sync pulse polarity (1 = positive, 0 = negative)
+         V_POL     => '1',         -- vertical sync pulse polarity (1 = positive, 0 = negative)
          pixel_clk => vga_clk,       -- pixel clock at frequency of VGA mode being used
          reset_n   => not vga_rst,   -- active low
          h_sync    => vga_hs,        -- horizontal sync pulse

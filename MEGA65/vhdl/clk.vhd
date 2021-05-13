@@ -48,8 +48,6 @@ architecture rtl of clk is
    signal clk27x5_mmcm   : std_logic;
    signal clk27x5        : std_logic;
 
-   signal clkx5_mux      : std_logic;
-
    signal vga_clkx5_mmcm : std_logic;
    signal vga_clk_mmcm   : std_logic;
 
@@ -185,22 +183,16 @@ begin
          O => clk40x5
       );
 
-   i_BUFGMUX_vga_rst : BUFGMUX_1
-      port map (
-         I0 => clk27x5,          -- 1-bit input: Clock input (S=0)
-         I1 => clk40x5,          -- 1-bit input: Clock input (S=1)
-         S  => vga_clk_sel_i,    -- 1-bit input: Clock select
-         O  => clkx5_mux         -- 1-bit output: Clock output
-      ); -- i_BUFGMUX_vga_rst : BUFGMUX
-
    i_mmcme2_adv_vga : MMCME2_ADV
       generic map (
          BANDWIDTH            => "OPTIMIZED",
          CLKOUT4_CASCADE      => FALSE,
          COMPENSATION         => "ZHOLD",
          STARTUP_WAIT         => FALSE,
-         CLKIN1_PERIOD        => 5.0,        -- INPUT @ 200 MHz or 135 MHz
+         CLKIN1_PERIOD        => 5.0,        -- INPUT @ 200 MHz
+         CLKIN2_PERIOD        => 7.407,      -- INPUT @ 135 MHz
          REF_JITTER1          => 0.010,
+         REF_JITTER2          => 0.010,
          DIVCLK_DIVIDE        => 1,
          CLKFBOUT_MULT_F      => 5.0,        -- f_VCO = 1000 MHz
          CLKFBOUT_PHASE       => 0.000,
@@ -221,10 +213,9 @@ begin
          CLKOUT1             => vga_clk_mmcm,
          -- Input clock control
          CLKFBIN             => clkfb3,
-         CLKIN1              => clkx5_mux,
-         CLKIN2              => '0',
-         -- Tied to always select the primary input clock
-         CLKINSEL            => '1',
+         CLKIN1              => clk40x5,
+         CLKIN2              => clk27x5,
+         CLKINSEL            => vga_clk_sel_i,
          -- Ports for dynamic reconfiguration
          DADDR               => (others => '0'),
          DCLK                => '0',
@@ -243,7 +234,7 @@ begin
          CLKINSTOPPED        => open,
          CLKFBSTOPPED        => open,
          PWRDWN              => '0',
-         RST                 => '0'
+         RST                 => not sys_rstn_i
       ); -- i_mmcme2_adv_vga : MMCME2_ADV
 
    clkfb3_bufg : BUFG

@@ -9,6 +9,7 @@ entity test_audio is
 port (
    clk_i       : in std_logic;
    rst_i       : in std_logic;
+   clk_khz_i   : in integer;
 
    pcm_left_o  : out std_logic_vector(15 downto 0);
    pcm_right_o : out std_logic_vector(15 downto 0);
@@ -22,11 +23,11 @@ end test_audio;
 
 architecture synthesis of test_audio is
 
-signal pcm_clken_count : integer range 0 to 698;
+signal pcm_clken_count : integer;
 
 begin
 
-   -- Generate audio: Sawtooth @ 512 Hz
+   -- Generate sawtooth
    p_audio : process (clk_i)
    begin
       if rising_edge(clk_i) then
@@ -35,15 +36,16 @@ begin
       end if;
    end process p_audio;
 
+   -- Generate signal at 48 kHz.
    p_pcm_clken : process (clk_i)
    begin
       if rising_edge(clk_i) then
          pcm_clken_o <= '0';
-         if pcm_clken_count = 0 then
-            pcm_clken_count <= 698;  -- 33554432 / 699 ~ 48000
+         if pcm_clken_count + 48 >= clk_khz_i then
+            pcm_clken_count <= pcm_clken_count + 48 - clk_khz_i;
             pcm_clken_o <= '1';
          else
-            pcm_clken_count <= pcm_clken_count - 1;
+            pcm_clken_count <= pcm_clken_count + 48;
          end if;
       end if;
    end process p_pcm_clken;
