@@ -18,6 +18,7 @@ package video_modes_pkg is
       V_POL     : std_logic;  -- vertical sync pulse polarity (1 = positive, 0 = negative)
    end record video_modes_t;
 
+   -- Taken from this link: http://tinyvga.com/vga-timing/800x600@60Hz
    constant C_VGA_800_600_60 : video_modes_t := (
       CLK_SEL   => '1',       -- 40 MHz
       CLK_KHZ   => 40000,     -- 40 MHz
