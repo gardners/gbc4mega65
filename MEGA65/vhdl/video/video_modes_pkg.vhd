@@ -14,6 +14,8 @@ package video_modes_pkg is
       V_PULSE   : integer;    -- vertical sync pulse width in rows
       V_BP      : integer;    -- vertical back porch width in rows
       V_FP      : integer;    -- vertical front porch width in rows
+      H_POL     : std_logic;  -- horizontal sync pulse polarity (1 = positive, 0 = negative)
+      V_POL     : std_logic;  -- vertical sync pulse polarity (1 = positive, 0 = negative)
    end record video_modes_t;
 
    constant C_VGA_800_600_60 : video_modes_t := (
@@ -26,7 +28,9 @@ package video_modes_pkg is
       H_FP      => 40,        -- horizontal front porch width in pixels
       V_PULSE   => 4,         -- vertical sync pulse width in rows
       V_BP      => 23,        -- vertical back porch width in rows
-      V_FP      => 1          -- vertical front porch width in rows
+      V_FP      => 1,         -- vertical front porch width in rows
+      H_POL     => '1',       -- horizontal sync pulse polarity (1 = positive, 0 = negative)
+      V_POL     => '1'        -- vertical sync pulse polarity (1 = positive, 0 = negative)
    );
 
    -- Taken from section 4.9 in the document CEA-861-D
@@ -36,11 +40,13 @@ package video_modes_pkg is
       H_PIXELS  => 720,       -- horizontal display width in pixels
       V_PIXELS  => 576,       -- vertical display width in rows
       H_PULSE   => 64,        -- horizontal sync pulse width in pixels
-      H_BP      => 68,        -- horizontal back porch width in pixels
-      H_FP      => 12,        -- horizontal front porch width in pixels
+      H_BP      => 63,        -- horizontal back porch width in pixels
+      H_FP      => 17,        -- horizontal front porch width in pixels
       V_PULSE   => 5,         -- vertical sync pulse width in rows
       V_BP      => 39,        -- vertical back porch width in rows
-      V_FP      => 5          -- vertical front porch width in rows
+      V_FP      => 5,         -- vertical front porch width in rows
+      H_POL     => '0',       -- horizontal sync pulse polarity (1 = positive, 0 = negative)
+      V_POL     => '0'        -- vertical sync pulse polarity (1 = positive, 0 = negative)
    );
 
 end package video_modes_pkg;
