@@ -114,7 +114,7 @@ begin
       end if;
    end process p_sys_rstn;
 
-   video_mode <= C_VGA_720_576_50 when RESET_N = '1' else C_VGA_800_600_60;
+   video_mode <= C_VGA_1280_720_60;
    VGA_DX <= video_mode.H_PIXELS;
    VGA_DY <= video_mode.V_PIXELS;
 
@@ -127,7 +127,6 @@ begin
       (
          sys_clk_i     => CLK,
          sys_rstn_i    => sys_rstn,
-         vga_clk_sel_i => video_mode.CLK_SEL, -- 0: 27 MHz, 1 : 40 MHz
          vga_clkx5_o   => vga_clkx5,
          vga_clk_o     => vga_clk,
          vga_rst_o     => vga_rst
@@ -218,12 +217,14 @@ begin
    -- Generate Video
    vga_red   <= X"00" when vga_disp_en = '0' else
                 X"FF" when vga_col = 0 or vga_col = VGA_DX-1 or vga_row = 0 or vga_row = VGA_DY-1 else
+                X"33" when vga_col < VGA_DX/2 else
                 X"77";
    vga_green <= X"00" when vga_disp_en = '0' else
                 X"FF" when vga_col = 0 or vga_col = VGA_DX-1 or vga_row = 0 or vga_row = VGA_DY-1 else
                 X"55";
    vga_blue  <= X"00" when vga_disp_en = '0' else
                 X"FF" when vga_col = 0 or vga_col = VGA_DX-1 or vga_row = 0 or vga_row = VGA_DY-1 else
+                X"77" when vga_row < VGA_DY/2 else
                 X"33";
 
    -- make the VDAC output the image
