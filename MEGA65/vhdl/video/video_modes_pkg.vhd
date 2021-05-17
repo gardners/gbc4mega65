@@ -58,8 +58,8 @@ package video_modes_pkg is
       V_FP      =>    5,      -- vertical front porch width in rows
       V_PULSE   =>    5,      -- vertical sync pulse width in rows
       V_BP      =>   20,      -- vertical back porch width in rows
-      H_POL     => '1',       -- horizontal sync pulse polarity (1 = positive, 0 = negative)
-      V_POL     => '1'        -- vertical sync pulse polarity (1 = positive, 0 = negative)
+      H_POL     => '0',       -- horizontal sync pulse polarity (1 = positive, 0 = negative)
+      V_POL     => '0'        -- vertical sync pulse polarity (1 = positive, 0 = negative)
    );
 
 end package video_modes_pkg;

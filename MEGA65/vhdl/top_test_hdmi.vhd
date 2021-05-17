@@ -201,8 +201,8 @@ begin
          V_PULSE   => video_mode.V_PULSE,
          V_BP      => video_mode.V_BP,
          V_FP      => video_mode.V_FP,
-         H_POL     => '1',         -- horizontal sync pulse polarity (1 = positive, 0 = negative)
-         V_POL     => '1',         -- vertical sync pulse polarity (1 = positive, 0 = negative)
+         H_POL     => video_mode.H_POL,
+         V_POL     => video_mode.V_POL,
          pixel_clk => vga_clk,       -- pixel clock at frequency of VGA mode being used
          reset_n   => not vga_rst,   -- active low
          h_sync    => vga_hs,        -- horizontal sync pulse
